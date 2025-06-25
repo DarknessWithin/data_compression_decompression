@@ -263,9 +263,14 @@
           status.innerText = "❌ Error: " + (data.error || "Unknown error.");
           return;
         }
+// Decode base64 to binary
+const binaryStr = atob(data.file_data);
+const byteArray = new Uint8Array(binaryStr.length);
+for (let i = 0; i < binaryStr.length; i++) {
+  byteArray[i] = binaryStr.charCodeAt(i);
+}
+const blob = new Blob([byteArray], { type: 'application/octet-stream' });
 
-        const byteArray = new Uint8Array(data.file_data);
-        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
         downloadBlobURL = URL.createObjectURL(blob);
         downloadFilename = data.filename;
 
