@@ -22,6 +22,7 @@
 ---
 
 ## 🗂️ Project Structure
+```pgsql
 CompressionHub/
 │
 ├── api/
@@ -32,6 +33,7 @@ CompressionHub/
 │
 ├── requirements.txt # Python dependencies
 ├── README.md # You're reading it :)
+```
 
 
 ---
