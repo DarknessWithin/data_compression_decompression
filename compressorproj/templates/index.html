@@ -5,6 +5,7 @@
   <title>🧬 Compression Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -16,22 +17,28 @@
     body {
       height: 100vh;
       display: flex;
+      flex-direction: column;
       background-color: #0d0d0d;
       color: #00ffe0;
+      overflow: hidden;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
     }
 
     .sidebar {
-      width: 45%;
+      width: 40%;
       background: linear-gradient(to bottom, #1a1a1a, #000000);
-      padding: 50px 30px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+      padding: 40px 30px;
       border-right: 2px dashed #00ffe0;
+      overflow-y: auto;
     }
 
     .sidebar h1 {
-      font-size: 2.2rem;
+      font-size: 2rem;
       color: #00ffe0;
       margin-bottom: 20px;
       text-shadow: 0 0 8px #00ffe0;
@@ -41,36 +48,32 @@
       font-size: 1rem;
       line-height: 1.6;
       color: #88fdf5;
-      margin-bottom: 20px;
     }
 
     .terminal {
-      width: 55%;
-      padding: 40px;
+      width: 60%;
+      padding: 30px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      overflow-y: auto;
     }
 
-    .terminal form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    form {
       background: #111;
-      padding: 30px;
+      padding: 20px;
       border: 2px solid #00ffe0;
       border-radius: 10px;
-      box-shadow: 0 0 15px #00ffe033;
+      margin-bottom: 20px;
     }
 
     input[type="file"], select, button {
       background: #0f0f0f;
       color: #00ffe0;
       border: 1px solid #00ffe0;
-      padding: 10px 14px;
+      padding: 10px;
+      margin: 10px 0;
       border-radius: 6px;
       font-size: 1rem;
-      transition: 0.2s;
     }
 
     input[type="file"]::file-selector-button {
@@ -83,12 +86,6 @@
       cursor: pointer;
     }
 
-    select:focus, input:focus, button:focus {
-      outline: none;
-      border-color: #22fdec;
-      box-shadow: 0 0 5px #00ffe0;
-    }
-
     button {
       background: #00ffe0;
       color: #000;
@@ -97,93 +94,104 @@
     }
 
     button:hover {
-      background: #00c8aa;
+      background-color: #00c8aa;
     }
 
     #status {
-      font-size: 0.9rem;
-      margin-top: 10px;
       color: #ff6b6b;
+      margin-top: 10px;
     }
 
     #log {
-      margin-top: 25px;
       background: #1a1a1a;
-      color: #ffffff;
-      border: 1px solid #444;
       padding: 15px;
       border-radius: 6px;
+      font-size: 0.9rem;
+      color: #eee;
       white-space: pre-line;
-      font-size: 0.85rem;
-      max-height: 200px;
-      overflow-y: auto;
+    }
+
+    .chart-section {
+      background: #0f0f0f;
+      border: 2px solid #00ffe0;
+      border-radius: 12px;
+      margin-top: 20px;
+      padding: 20px;
+    }
+
+    canvas {
+      background: #111;
+      border-radius: 8px;
     }
 
     @media (max-width: 768px) {
-      body {
+      .main {
         flex-direction: column;
       }
 
       .sidebar, .terminal {
         width: 100%;
         padding: 20px;
-        border: none;
-      }
-
-      .sidebar {
-        border-bottom: 2px dashed #00ffe0;
       }
     }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h1>🧬 Compression Hub</h1>
-    <p>
-      Upload any file and choose from a range of intelligent compression algorithms. Whether you're reducing size or decompressing complex formats, our tool supports both built-in and custom algorithms like Huffman, LZ77, RLE, and more.
-    </p>
-    <p><strong>Features:</strong><br>
-      ✅ Smart Auto Detection<br>
-      ⚙️ Custom Algorithm Support<br>
-      🔐 Fast & Efficient Processing<br>
-      💾 File Download with Meta Info
-    </p>
-  </div>
+  <div class="main">
+    <div class="sidebar">
+      <h1>🧬 Compression Hub</h1>
+      <p>
+        This tool intelligently compresses or decompresses your files using various built-in and custom algorithms like Huffman, LZ77, RLE, Gzip, and more.
+      </p>
+      <p>
+        After processing, you’ll get performance stats and real-time visualizations!
+      </p>
+    </div>
 
-  <div class="terminal">
-    <form id="uploadForm">
-      <input type="file" name="file" required />
-      <select name="operation" required>
-        <option value="">-- Select Operation --</option>
-        <option value="compress">Compress</option>
-        <option value="decompress">Decompress</option>
-      </select>
-      <select name="algorithm" required>
-        <option value="">-- Select Algorithm --</option>
-        <option value="auto">Auto Detect</option>
-        <option value="huffman">Huffman</option>
-        <option value="lz77">LZ77</option>
-        <option value="rle">RLE</option>
-        <option value="gzip">Gzip</option>
-        <option value="bz2">Bz2</option>
-        <option value="lzma">LZMA</option>
-        <option value="zlib">Zlib</option>
-      </select>
-      <button type="submit">Execute</button>
-      <div id="status"></div>
-    </form>
-    <div id="log"></div>
+    <div class="terminal">
+      <form id="uploadForm">
+        <input type="file" name="file" required />
+        <select name="operation" required>
+          <option value="">-- Select Operation --</option>
+          <option value="compress">Compress</option>
+          <option value="decompress">Decompress</option>
+        </select>
+        <select name="algorithm" required>
+          <option value="">-- Select Algorithm --</option>
+          <option value="auto">Auto Detect</option>
+          <option value="huffman">Huffman</option>
+          <option value="lz77">LZ77</option>
+          <option value="rle">RLE</option>
+          <option value="gzip">Gzip</option>
+          <option value="bz2">Bz2</option>
+          <option value="lzma">LZMA</option>
+          <option value="zlib">Zlib</option>
+        </select>
+        <button type="submit">Execute</button>
+        <div id="status"></div>
+      </form>
+
+      <div id="log"></div>
+
+      <div class="chart-section" style="display:none" id="chartBox">
+        <h3 style="margin-bottom:10px;">📊 Processing Statistics</h3>
+        <canvas id="metricsChart" height="200"></canvas>
+      </div>
+    </div>
   </div>
 
   <script>
     const form = document.getElementById('uploadForm');
     const status = document.getElementById('status');
     const log = document.getElementById('log');
+    const chartBox = document.getElementById('chartBox');
+    let chart;
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      status.innerText = "🔄 Working...";
+      status.innerText = "⏳ Processing...";
       log.innerText = "";
+      chartBox.style.display = "none";
 
       const formData = new FormData(form);
 
@@ -196,31 +204,72 @@
         const data = await response.json();
 
         if (!data.success) {
-          status.innerText = "❌ " + (data.error || "Something went wrong.");
+          status.innerText = "❌ Error: " + (data.error || "Unknown error.");
           return;
         }
 
         const byteArray = new Uint8Array(data.file_data);
         const blob = new Blob([byteArray], { type: 'application/octet-stream' });
-
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = data.filename;
         link.click();
 
-        status.innerText = `✅ ${data.operation === 'compress' ? 'Compressed' : 'Decompressed'}!`;
+        status.innerText = `✅ ${data.operation === 'compress' ? 'Compressed' : 'Decompressed'} successfully!`;
 
         const originalKB = (data.original_size / 1024).toFixed(2);
         const processedKB = (data.processed_size / 1024).toFixed(2);
-        let message = `📦 Original: ${originalKB} KB\n📤 Output: ${processedKB} KB`;
+        let message = `📦 Original Size: ${originalKB} KB\n📤 Processed Size: ${processedKB} KB`;
 
         if (data.operation === 'compress') {
-          message += `\n📉 Ratio: ${data.compression_ratio}%`;
+          message += `\n📉 Compression Ratio: ${data.compression_ratio}%`;
         }
 
-        message += `\n🕒 Time: ${data.processing_time} sec`;
-
+        message += `\n🕒 Time Taken: ${data.processing_time} sec`;
         log.innerText = message;
+
+        // Show chart
+        chartBox.style.display = "block";
+        if (chart) chart.destroy(); // reset previous chart
+
+        const labels = ["Original KB", "Processed KB", "Time (sec)"];
+        const values = [originalKB, processedKB, data.processing_time];
+
+        if (data.operation === 'compress') {
+          labels.push("Compression %");
+          values.push(data.compression_ratio);
+        }
+
+        const ctx = document.getElementById('metricsChart').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: "Compression Metrics",
+              data: values,
+              backgroundColor: ["#00ffe0", "#007bff", "#ff6b6b", "#ffc107"],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: ctx => `${ctx.raw}` } }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: '#444' },
+                ticks: { color: '#ccc' }
+              },
+              x: {
+                ticks: { color: '#ccc' }
+              }
+            }
+          }
+        });
 
       } catch (err) {
         console.error(err);
