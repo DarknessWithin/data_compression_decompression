@@ -95,7 +95,7 @@ Auto mode selects the first method that achieves better-than-original compressio
 🖼️ Screenshots
 📌 (You can include screenshots of the UI, charts, and file download feature here.)
 
-🛠️ To Do / Future Improvements
+#🛠️ To Do / Future Improvements
 ⏱️ Add real-time compression progress bar
 
 🗃️ Support zipped multi-file archives
