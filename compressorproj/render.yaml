@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: file-compressor
+    env: python
+    buildCommand: ""
+    startCommand: python api/app.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
