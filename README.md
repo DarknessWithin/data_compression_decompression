@@ -23,7 +23,7 @@
 
 ## 🗂️ Project Structure
 ```pgsql
-CompressionHub/
+Compressionproj/
 │
 ├── api/
 │ └── app.py # Main Flask backend with all algorithms and routes
