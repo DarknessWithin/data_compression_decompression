@@ -68,7 +68,7 @@ http://localhost:5000
 ```
 🌐 Live Deployment (Render)
 The app is configured for deployment on Render:
-
+```pgsql
 📄 Environment Setup
 Ensure this structure:
 ├── api/
@@ -76,6 +76,7 @@ Ensure this structure:
 ├── templates/
 │   └── index.html
 ├── requirements.txt
+```
 
 Set the Start Command on Render as:
 ```bash
