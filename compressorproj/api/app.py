@@ -2,12 +2,14 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os, base64, time, json
 
-app = Flask(__name__, template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates')))
-CORS(app)
-import gzip, bz2, lzma, zlib, base64, heapq
+import gzip, bz2, lzma, zlib, heapq
 from collections import Counter
 
-# Built-in Compressors
+app = Flask(__name__, template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates')))
+CORS(app)
+
+# -------------------- Compressor Implementations --------------------
+
 class BuiltInCompressor:
     def __init__(self, algorithm):
         self.algorithm = algorithm
@@ -26,46 +28,40 @@ class BuiltInCompressor:
             'zlib': (zlib.compress, zlib.decompress)
         }[self.algorithm][0 if is_compress else 1]
 
-
 # Huffman Compression
 class HuffmanNode:
     def __init__(self, char, freq):
         self.char = char
         self.freq = freq
         self.left = self.right = None
-
     def __lt__(self, other): return self.freq < other.freq
 
 class HuffmanCompressor:
     def __init__(self):
-        self.codes, self.reverse = {}, {}
+        self.codes = {}
 
     def compress(self, data):
         freq = Counter(data)
         heap = [HuffmanNode(c, f) for c, f in freq.items()]
         heapq.heapify(heap)
-
-        if len(heap) == 1: return bytes([next(iter(freq))]), {'freq': freq, 'padding': 0, 'length': len(data)}
+        if len(heap) == 1:
+            return bytes([next(iter(freq))]), {'freq': freq, 'padding': 0, 'length': len(data)}
 
         while len(heap) > 1:
             l, r = heapq.heappop(heap), heapq.heappop(heap)
             parent = HuffmanNode(None, l.freq + r.freq)
             parent.left, parent.right = l, r
             heapq.heappush(heap, parent)
-
-        root = heap[0]
-        self._generate_codes(root)
-
+        self._generate_codes(heap[0])
         bitstring = ''.join(self.codes[byte] for byte in data)
         padding = 8 - len(bitstring) % 8
         bitstring += '0' * padding
         compressed = bytearray(int(bitstring[i:i+8], 2) for i in range(0, len(bitstring), 8))
-
         return bytes(compressed), {'freq': freq, 'padding': padding, 'length': len(data)}
 
     def _generate_codes(self, node, code=''):
         if node.char is not None:
-            self.codes[node.char] = code or "0"
+            self.codes[node.char] = code or '0'
         else:
             self._generate_codes(node.left, code + '0')
             self._generate_codes(node.right, code + '1')
@@ -74,13 +70,11 @@ class HuffmanCompressor:
         root = self._rebuild_tree(meta['freq'])
         bitstring = ''.join(format(b, '08b') for b in data)[:-meta['padding']]
         output, node = bytearray(), root
-
         for bit in bitstring:
             node = node.left if bit == '0' else node.right
             if node.char is not None:
                 output.append(node.char)
                 node = root
-
         return bytes(output)
 
     def _rebuild_tree(self, freq):
@@ -93,8 +87,7 @@ class HuffmanCompressor:
             heapq.heappush(heap, parent)
         return heap[0]
 
-
-# LZ77
+# LZ77 Compression
 class LZ77Compressor:
     def __init__(self, window=1024): self.window = window
 
@@ -132,8 +125,7 @@ class LZ77Compressor:
             i += 4
         return bytes(output)
 
-
-# RLE
+# RLE Compression
 class RLECompressor:
     def compress(self, data):
         i, out = 0, bytearray()
@@ -163,8 +155,8 @@ class RLECompressor:
                 i += 1
         return bytes(out)
 
+# -------------------- Compressor Factory --------------------
 
-# Compressor Factory
 class CompressorFactory:
     compressors = {
         'gzip': lambda: BuiltInCompressor('gzip'),
@@ -186,6 +178,8 @@ class CompressorFactory:
     def get_all():
         return list(CompressorFactory.compressors.keys())
 
+# -------------------- Flask Routes --------------------
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -196,85 +190,77 @@ def handle_file():
     if not uploaded_file or uploaded_file.filename == '':
         return jsonify({'success': False, 'error': 'No file uploaded'}), 400
 
-    try:
-        raw_data = uploaded_file.read()
-        operation = request.form.get('operation')
-        algorithm = request.form.get('algorithm', 'auto').lower()
-        filename = uploaded_file.filename
-        original_size = len(raw_data)
+    raw_data = uploaded_file.read()
+    operation = request.form.get('operation')
+    algorithm = request.form.get('algorithm', 'auto').lower()
+    filename = uploaded_file.filename
+    original_size = len(raw_data)
 
-        if operation == 'compress':
-            chosen_algorithms = [algorithm] if algorithm != 'auto' else CompressorFactory.get_all()
-            for algo in chosen_algorithms:
-                try:
-                    compressor = CompressorFactory.get(algo)
-                    start = time.time()
-                    result = compressor.compress(raw_data)
-                    compressed_data, metadata = result if isinstance(result, tuple) else (result, {})
-                    duration = round(time.time() - start, 3)
+    if operation == 'compress':
+        chosen_algorithms = [algorithm] if algorithm != 'auto' else CompressorFactory.get_all()
+        for algo in chosen_algorithms:
+            try:
+                compressor = CompressorFactory.get(algo)
+                start = time.time()
+                compressed_data, metadata = compressor.compress(raw_data)
+                duration = round(time.time() - start, 3)
 
-                    if len(compressed_data) >= original_size:
-                        continue
-
-                    response_payload = {
-                        'compressed_data': base64.b64encode(compressed_data).decode(),
-                        'metadata': metadata,
-                        'algorithm': algo,
-                        'original_filename': filename
-                    }
-
-                    return jsonify({
-                        'success': True,
-                        'operation': 'compress',
-                        'algorithm': algo,
-                        'original_size': original_size,
-                        'processed_size': len(compressed_data),
-                        'compression_ratio': round((original_size - len(compressed_data)) / original_size * 100, 2),
-                        'processing_time': duration,
-                        'filename': f"{os.path.splitext(filename)[0]}_{algo}.compressed",
-                        'file_data': list(json.dumps(response_payload).encode())
-                    })
-
-                except Exception:
+                if len(compressed_data) >= original_size:
                     continue
 
-            return jsonify({'success': False, 'error': 'No compression succeeded'}), 400
+                return jsonify({
+                    'success': True,
+                    'operation': 'compress',
+                    'algorithm': algo,
+                    'original_size': original_size,
+                    'processed_size': len(compressed_data),
+                    'compression_ratio': round((original_size - len(compressed_data)) / original_size * 100, 2),
+                    'processing_time': duration,
+                    'filename': f"{os.path.splitext(filename)[0]}_{algo}.compressed",
+                    'file_data': base64.b64encode(compressed_data).decode()
+                })
 
-        elif operation == 'decompress':
+            except Exception as e:
+                continue
+
+        return jsonify({'success': False, 'error': 'No compression succeeded'}), 400
+
+    elif operation == 'decompress':
+        try:
             parsed_payload = json.loads(raw_data.decode())
-            compressed = base64.b64decode(parsed_payload['compressed_data'])
+            compressed_data = base64.b64decode(parsed_payload['file_data'])
             meta = parsed_payload.get('metadata', {})
             algo = parsed_payload['algorithm']
             filename = parsed_payload['original_filename']
+
             decompressor = CompressorFactory.get(algo)
             start = time.time()
-            output_data = decompressor.decompress(compressed, meta)
+            output_data = decompressor.decompress(compressed_data, meta)
             duration = round(time.time() - start, 3)
 
             return jsonify({
                 'success': True,
                 'operation': 'decompress',
                 'algorithm': algo,
-                'original_size': len(compressed),
+                'original_size': len(compressed_data),
                 'processed_size': len(output_data),
                 'processing_time': duration,
                 'filename': filename,
-                'file_data': list(output_data)
+                'file_data': base64.b64encode(output_data).decode()
             })
 
-        return jsonify({'success': False, 'error': 'Unknown operation'}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
 
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    return jsonify({'success': False, 'error': 'Unknown operation'}), 400
 
 @app.route('/health')
 def health_check():
     return jsonify({
         'status': 'ok',
         'supported_algorithms': CompressorFactory.get_all(),
-        'version': '5.0-refactored'
+        'version': '5.1-fix'
     })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
-
