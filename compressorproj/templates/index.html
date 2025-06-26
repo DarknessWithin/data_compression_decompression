@@ -18,15 +18,9 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      background-color: #0d0d0d;
+      background-color: #0c0c0c;
       color: #00ffe0;
       overflow: hidden;
-      transition: background-color 0.4s, color 0.4s;
-    }
-
-    body.light-mode {
-      background-color: #f0f0f0;
-      color: #000;
     }
 
     .main {
@@ -36,15 +30,16 @@
     }
 
     .sidebar {
-      width: 35%;
+      width: 40%;
       background: linear-gradient(to bottom, #1a1a1a, #000000);
-      padding: 30px;
+      padding: 40px 30px;
       border-right: 2px dashed #00ffe0;
       overflow-y: auto;
     }
 
     .sidebar h1 {
       font-size: 2rem;
+      color: #00ffe0;
       margin-bottom: 20px;
       text-shadow: 0 0 8px #00ffe0;
     }
@@ -55,15 +50,8 @@
       color: #88fdf5;
     }
 
-    .sidebar .toggle {
-      margin-top: 20px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: #ff0;
-    }
-
     .terminal {
-      width: 65%;
+      width: 60%;
       padding: 30px;
       display: flex;
       flex-direction: column;
@@ -78,7 +66,8 @@
       margin-bottom: 20px;
     }
 
-    input[type="file"], select, button {
+    input[type="file"],
+    button {
       background: #0f0f0f;
       color: #00ffe0;
       border: 1px solid #00ffe0;
@@ -86,6 +75,7 @@
       margin: 10px 0;
       border-radius: 6px;
       font-size: 1rem;
+      width: 100%;
     }
 
     input[type="file"]::file-selector-button {
@@ -123,18 +113,6 @@
       white-space: pre-line;
     }
 
-    #downloadBtn {
-      display: none;
-      margin: 15px 0;
-      padding: 10px 20px;
-      background: #00ffe0;
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
     .chart-section {
       background: #0f0f0f;
       border: 2px solid #00ffe0;
@@ -148,29 +126,48 @@
       border-radius: 8px;
     }
 
-    .history {
-      margin-top: 20px;
-      font-size: 0.85rem;
-      background: #141414;
+    .algo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .algo-card {
+      background: #121212;
+      border: 2px solid #00ffe0;
+      border-radius: 12px;
       padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #00ffe0;
-      color: #ccc;
+      text-align: left;
+      color: #00ffe0;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease-in-out;
     }
 
-    body.light-mode .sidebar, body.light-mode form, body.light-mode .history, body.light-mode .chart-section {
-      background: #fff;
-      color: #000;
-      border-color: #888;
+    .algo-card:hover {
+      background: #1e1e1e;
+      box-shadow: 0 0 10px #00ffe080;
     }
 
-    body.light-mode #log, body.light-mode canvas {
-      background: #f5f5f5;
-      color: #000;
+    .algo-card input[type="radio"] {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      transform: scale(1.2);
+      accent-color: #00ffe0;
     }
 
-    body.light-mode .toggle {
-      color: #555;
+    .algo-card h3 {
+      margin-bottom: 5px;
+      font-size: 1.2rem;
+      color: #00ffe0;
+    }
+
+    .algo-card p {
+      font-size: 0.85rem;
+      color: #88fdf5;
+      margin: 0;
     }
 
     @media (max-width: 768px) {
@@ -178,7 +175,8 @@
         flex-direction: column;
       }
 
-      .sidebar, .terminal {
+      .sidebar,
+      .terminal {
         width: 100%;
         padding: 20px;
       }
@@ -189,44 +187,82 @@
   <div class="main">
     <div class="sidebar">
       <h1>🧬 Compression Hub</h1>
-      <p>This tool compresses or decompresses files using smart algorithms like Huffman, LZ77, RLE, and more. Visualize performance and download results instantly.</p>
-      <div class="toggle" onclick="toggleTheme()">🌗 Toggle Theme</div>
+      <p>
+        This tool intelligently compresses or decompresses your files using various built-in and custom algorithms like Huffman, LZ77, RLE, Gzip, and more.
+      </p>
+      <p>
+        After processing, you’ll get performance stats and real-time visualizations!
+      </p>
     </div>
 
     <div class="terminal">
       <form id="uploadForm">
         <input type="file" name="file" required />
-        <select name="operation" required>
-          <option value="">-- Select Operation --</option>
-          <option value="compress">Compress</option>
-          <option value="decompress">Decompress</option>
-        </select>
-        <select name="algorithm" required>
-          <option value="">-- Select Algorithm --</option>
-          <option value="auto">Auto Detect</option>
-          <option value="huffman">Huffman</option>
-          <option value="lz77">LZ77</option>
-          <option value="rle">RLE</option>
-          <option value="gzip">Gzip</option>
-          <option value="bz2">Bz2</option>
-          <option value="lzma">LZMA</option>
-          <option value="zlib">Zlib</option>
-        </select>
+
+        <div style="margin: 15px 0;"><strong>Select Operation:</strong></div>
+        <label><input type="radio" name="operation" value="compress" required /> Compress</label>
+        <label style="margin-left: 10px;"><input type="radio" name="operation" value="decompress" required /> Decompress</label>
+
+        <div style="margin-top: 20px;"><strong>Choose Algorithm:</strong></div>
+        <div class="algo-grid">
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="auto" required>
+            <h3>Auto</h3>
+            <p>Automatically selects the best algorithm based on file size & type.</p>
+          </label>
+
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="huffman">
+            <h3>Huffman</h3>
+            <p>Optimal prefix tree encoding for lossless compression.</p>
+          </label>
+
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="lz77">
+            <h3>LZ77</h3>
+            <p>Dictionary-based compression using sliding window matching.</p>
+          </label>
+
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="rle">
+            <h3>RLE</h3>
+            <p>Run-length encoding for repeated sequences (best on patterns).</p>
+          </label>
+
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="gzip">
+            <h3>Gzip</h3>
+            <p>Uses DEFLATE (LZ77 + Huffman). Fast and widely supported.</p>
+          </label>
+
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="bz2">
+            <h3>Bz2</h3>
+            <p>Uses BWT + Huffman. High compression, slower than gzip.</p>
+          </label>
+
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="lzma">
+            <h3>LZMA</h3>
+            <p>High-ratio compression. Basis for 7z archives.</p>
+          </label>
+
+          <label class="algo-card">
+            <input type="radio" name="algorithm" value="zlib">
+            <h3>Zlib</h3>
+            <p>Lightweight DEFLATE variant used in PNG and HTTP compression.</p>
+          </label>
+        </div>
+
         <button type="submit">Execute</button>
         <div id="status"></div>
       </form>
 
-      <button id="downloadBtn">⬇️ Download File</button>
       <div id="log"></div>
 
       <div class="chart-section" style="display:none" id="chartBox">
         <h3 style="margin-bottom:10px;">📊 Processing Statistics</h3>
         <canvas id="metricsChart" height="200"></canvas>
-      </div>
-
-      <div class="history">
-        <strong>🕘 Recent History:</strong>
-        <ul id="historyList"></ul>
       </div>
     </div>
   </div>
@@ -236,18 +272,13 @@
     const status = document.getElementById('status');
     const log = document.getElementById('log');
     const chartBox = document.getElementById('chartBox');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const historyList = document.getElementById('historyList');
-    let chart, downloadBlobURL = "", downloadFilename = "";
-    const history = [];
+    let chart;
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       status.innerText = "⏳ Processing...";
       log.innerText = "";
       chartBox.style.display = "none";
-      downloadBtn.style.display = "none";
-      if (downloadBlobURL) URL.revokeObjectURL(downloadBlobURL);
 
       const formData = new FormData(form);
 
@@ -263,18 +294,14 @@
           status.innerText = "❌ Error: " + (data.error || "Unknown error.");
           return;
         }
-// Decode base64 to binary
-const binaryStr = atob(data.file_data);
-const byteArray = new Uint8Array(binaryStr.length);
-for (let i = 0; i < binaryStr.length; i++) {
-  byteArray[i] = binaryStr.charCodeAt(i);
-}
-const blob = new Blob([byteArray], { type: 'application/octet-stream' });
 
-        downloadBlobURL = URL.createObjectURL(blob);
-        downloadFilename = data.filename;
+        const byteArray = new Uint8Array(data.file_data);
+        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = data.filename;
+        link.click();
 
-        downloadBtn.style.display = "inline-block";
         status.innerText = `✅ ${data.operation === 'compress' ? 'Compressed' : 'Decompressed'} successfully!`;
 
         const originalKB = (data.original_size / 1024).toFixed(2);
@@ -288,17 +315,13 @@ const blob = new Blob([byteArray], { type: 'application/octet-stream' });
         message += `\n🕒 Time Taken: ${data.processing_time} sec`;
         log.innerText = message;
 
-        // Save to history
-        history.unshift(`${new Date().toLocaleTimeString()} ➤ ${data.operation} with ${data.algorithm}`);
-        if (history.length > 5) history.pop();
-        updateHistory();
-
-        // Show chart
+        // Chart.js display
         chartBox.style.display = "block";
         if (chart) chart.destroy();
 
         const labels = ["Original KB", "Processed KB", "Time (sec)"];
         const values = [originalKB, processedKB, data.processing_time];
+
         if (data.operation === 'compress') {
           labels.push("Compression %");
           values.push(data.compression_ratio);
@@ -319,7 +342,8 @@ const blob = new Blob([byteArray], { type: 'application/octet-stream' });
           options: {
             responsive: true,
             plugins: {
-              legend: { display: false }
+              legend: { display: false },
+              tooltip: { callbacks: { label: ctx => `${ctx.raw}` } }
             },
             scales: {
               y: {
@@ -339,26 +363,6 @@ const blob = new Blob([byteArray], { type: 'application/octet-stream' });
         status.innerText = "❌ Failed to process file.";
       }
     });
-
-    downloadBtn.addEventListener('click', () => {
-      const link = document.createElement('a');
-      link.href = downloadBlobURL;
-      link.download = downloadFilename;
-      link.click();
-    });
-
-    function toggleTheme() {
-      document.body.classList.toggle("light-mode");
-    }
-
-    function updateHistory() {
-      historyList.innerHTML = "";
-      history.forEach(entry => {
-        const li = document.createElement("li");
-        li.textContent = entry;
-        historyList.appendChild(li);
-      });
-    }
   </script>
 </body>
 </html>
