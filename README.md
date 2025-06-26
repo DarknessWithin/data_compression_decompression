@@ -113,4 +113,5 @@ Community resources on compression algorithms
 
 🌍 Multilingual interface
 
+project is deployed at https://data-compression-decompression-glq0.onrender.com/
 
